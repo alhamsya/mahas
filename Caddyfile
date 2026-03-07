@@ -1,0 +1,37 @@
+{
+    # Global options
+    admin off
+    persist_config off
+    auto_https off # Railway handles HTTPS
+    
+    # Server options
+    servers {
+        trusted_proxies static private_ranges 100.0.0.0/8
+    }
+}
+
+:{$PORT} {
+    # Access logs
+    log {
+        format json
+    }
+
+    # Health check
+    rewrite /health /*
+
+    # Serve static files from dist
+    root * ./dist
+    encode gzip
+    file_server
+
+
+    # Reverse proxy API requests to Mockoon
+    handle_path /api/* {
+        reverse_proxy 127.0.0.1:3001
+    }
+
+    # Catch-all for SPA routing (only if not handled above)
+    handle {
+        try_files {path} /index.html
+    }
+}
