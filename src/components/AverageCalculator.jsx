@@ -23,10 +23,10 @@ export default function AverageCalculator() {
   const [positions, setPositions] = useState(getInitialPositions);
 
   // Initialize Target State from Cookies or Default
-  const [targetCurrentAvg, setTargetCurrentAvg] = useState(() => Number(Cookies.get('avgCalc_tAvg')) || '');
-  const [targetCurrentLot, setTargetCurrentLot] = useState(() => Number(Cookies.get('avgCalc_tLot')) || '');
-  const [targetBudget, setTargetBudget] = useState(() => Number(Cookies.get('avgCalc_tBudget')) || '');
-  const [targetDesiredAvg, setTargetDesiredAvg] = useState(() => Number(Cookies.get('avgCalc_tDesired')) || '');
+  const [targetCurrentAvg, setTargetCurrentAvg] = useState(() => Number(Cookies.get('avgCalc_tAvg')) || 0);
+  const [targetTotalValue, setTargetTotalValue] = useState(() => Number(Cookies.get('avgCalc_tValue')) || 0);
+  const [targetBudget, setTargetBudget] = useState(() => Number(Cookies.get('avgCalc_tBudget')) || 0);
+  const [targetDesiredAvg, setTargetDesiredAvg] = useState(() => Number(Cookies.get('avgCalc_tDesired')) || 0);
 
   // Initialize Broker Fee State
   const [includeFees, setIncludeFees] = useState(() => Cookies.get('avgCalc_includeFees') === 'true');
@@ -40,10 +40,10 @@ export default function AverageCalculator() {
 
   useEffect(() => {
     Cookies.set('avgCalc_tAvg', targetCurrentAvg, { expires: 30 });
-    Cookies.set('avgCalc_tLot', targetCurrentLot, { expires: 30 });
+    Cookies.set('avgCalc_tValue', targetTotalValue, { expires: 30 });
     Cookies.set('avgCalc_tBudget', targetBudget, { expires: 30 });
     Cookies.set('avgCalc_tDesired', targetDesiredAvg, { expires: 30 });
-  }, [targetCurrentAvg, targetCurrentLot, targetBudget, targetDesiredAvg]);
+  }, [targetCurrentAvg, targetTotalValue, targetBudget, targetDesiredAvg]);
 
   useEffect(() => {
     Cookies.set('avgCalc_includeFees', includeFees, { expires: 30 });
@@ -204,9 +204,18 @@ export default function AverageCalculator() {
 
   const updatePosition = (id, field, value) => {
     const rawValue = (field === 'price' || field === 'lot') ? parseFormattedVal(value) : value;
-    setPositions(positions.map(p =>
-      p.id === id ? { ...p, [field]: rawValue } : p
-    ));
+    
+    // Handle Target State Updates
+    if (id === 'targetAvg') setTargetCurrentAvg(rawValue);
+    else if (id === 'targetValue') setTargetTotalValue(rawValue);
+    else if (id === 'targetBudget') setTargetBudget(rawValue);
+    else if (id === 'targetDesired') setTargetDesiredAvg(rawValue);
+    // Handle Blender State Updates
+    else {
+      setPositions(positions.map(p =>
+        p.id === id ? { ...p, [field]: rawValue } : p
+      ));
+    }
   };
 
   // Blender Calculations
@@ -225,35 +234,33 @@ export default function AverageCalculator() {
   const breakEvenPrice = averagePrice / (1 - sFeeNum);
 
   // Target Calculations
-  const targetCurrentValue = targetCurrentAvg * targetCurrentLot * 100;
-  // Rumus: (CurrentAvg * CurrentShares + BuyPrice * BuyShares) / (CurrentShares + BuyShares) = DesiredAvg
-  // Budget = BuyPrice * BuyShares
-  // Solving for BuyPrice...
-  // BuyPrice = ( (DesiredAvg * (CurrentShares + (Budget/BuyPrice))) - CurrentValue ) / BuyShares ... ini rumit kalau pakai uang.
-
-  // Kalau budget & target avg diketahui:
-  // (TotalValueLama + Budget) / (TotalSharesLama + SharesBaru) = TargetAvg
-  // TargetAvg * TotalSharesLama + TargetAvg * SharesBaru = TotalValueLama + Budget
-  // TargetAvg * SharesBaru = TotalValueLama + Budget - TargetAvg * TotalSharesLama
-  // SharesBaru = (TotalValueLama + Budget - TargetAvg * TotalSharesLama) / TargetAvg
-  // BuyPrice = Budget / SharesBaru
-
-  const currentShares = Number(targetCurrentLot) * 100;
+  const targetCurrentLot = (Number(targetCurrentAvg) > 0 && Number(targetTotalValue) > 0) 
+    ? Math.round(Number(targetTotalValue) / (Number(targetCurrentAvg) * 100)) 
+    : 0;
+  
+  const targetCurrentValue = Number(targetTotalValue);
+  
+  const currentShares = targetCurrentLot * 100;
   const desiredAvg = Number(targetDesiredAvg);
   const budget = Number(targetBudget);
-  const currentVal = Number(targetCurrentAvg) * currentShares;
+  const currentVal = Number(targetTotalValue);
 
   let newShares = 0;
   let requiredBuyPrice = 0;
 
   if (desiredAvg > 0) {
+    // SharesBaru = (TotalValueLama + Budget - TargetAvg * TotalSharesLama) / TargetAvg
     newShares = (currentVal + budget - (desiredAvg * currentShares)) / desiredAvg;
     if (newShares > 0 && budget > 0) {
-      requiredBuyPrice = budget / newShares;
+      // RequiredPrice * newShares * (1 + buyFee) = budget
+      requiredBuyPrice = (budget / newShares) / (1 + bFeeNum);
     }
   }
 
-  const formatIDR = (val) => val ? val.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0';
+  const formatIDR = (val) => {
+    if (val === undefined || val === null) return '0';
+    return Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
 
   return (
     <>
@@ -445,20 +452,25 @@ export default function AverageCalculator() {
                     onChange={(e) => handleNumericalChange('targetAvg', 'price', e.target.value, e.target)}
                     onKeyDown={(e) => handleKeyDown(e, 'targetAvg', 'price', 0)}
                     className="w-full bg-transparent text-lg text-white font-bold outline-none"
+                    placeholder="0"
                   />
                 </div>
                 <div className="bg-[#0f1623] rounded-xl p-4 border border-[rgba(255,255,255,0.02)]">
                   <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">TOTAL VALUE (RP)</label>
                   <input
                     type="text"
-                    value={formatInputValue(targetCurrentValue)}
-                    readOnly
-                    className="w-full bg-transparent text-lg text-white font-bold outline-none cursor-default opacity-90"
+                    inputMode="decimal"
+                    value={formatInputValue(targetTotalValue)}
+                    onChange={(e) => handleNumericalChange('targetValue', 'price', e.target.value, e.target)}
+                    onKeyDown={(e) => handleKeyDown(e, 'targetValue', 'price', 0)}
+                    className="w-full bg-transparent text-lg text-white font-bold outline-none"
+                    placeholder="0"
                   />
                 </div>
               </div>
+
               <div className="text-right text-[11px] font-bold text-text-muted bg-[rgba(255,255,255,0.05)] inline-block px-3 py-1.5 rounded-full ml-auto float-right mb-6">
-                Est. Output: <span className="text-white">{formatIDR(targetCurrentLot)}</span> lots
+                Est. Output: <span className="text-white">{targetCurrentLot.toLocaleString('en-US')}</span> lots
               </div>
               <div className="clear-both"></div>
 
@@ -505,49 +517,50 @@ export default function AverageCalculator() {
         {/* Right Column: Output & Insights */}
         <div className="lg:col-span-5 space-y-4">
 
+          {/* Shared Broker Fee Card */}
+          <div className="bg-[#1e293b] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <Banknote className="w-4 h-4 text-[#b78bf2]" />
+                <h3 className="text-[13px] font-bold text-white leading-none">Broker Fee</h3>
+              </div>
+              <button
+                onClick={() => setIncludeFees(!includeFees)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${includeFees ? 'bg-[#b78bf2]' : 'bg-[#334155]'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${includeFees ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className={`bg-[#0f1623] rounded-xl p-3 border border-[rgba(255,255,255,0.02)] transition-opacity ${includeFees ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                <label className="block text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Fee Buy (%)</label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={buyFee}
+                    onChange={(e) => setBuyFee(e.target.value.replace(/[^0-9.]/g, ''))}
+                    className="w-full bg-transparent text-sm text-white font-bold outline-none"
+                  />
+                </div>
+              </div>
+              <div className={`bg-[#0f1623] rounded-xl p-3 border border-[rgba(255,255,255,0.02)] transition-opacity ${includeFees ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                <label className="block text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Fee Sell (%)</label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={sellFee}
+                    onChange={(e) => setSellFee(e.target.value.replace(/[^0-9.]/g, ''))}
+                    className="w-full bg-transparent text-sm text-white font-bold outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {activeTab === 'blender' ? (
             // BLENDER OUTPUT
             <>
-              {/* Broker Fee Card */}
-              <div className="bg-[#1e293b] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="w-4 h-4 text-[#b78bf2]" />
-                    <h3 className="text-[13px] font-bold text-white leading-none">Broker Fee</h3>
-                  </div>
-                  <button
-                    onClick={() => setIncludeFees(!includeFees)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${includeFees ? 'bg-[#b78bf2]' : 'bg-[#334155]'}`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${includeFees ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={`bg-[#0f1623] rounded-xl p-3 border border-[rgba(255,255,255,0.02)] transition-opacity ${includeFees ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                    <label className="block text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Fee Buy (%)</label>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={buyFee}
-                        onChange={(e) => setBuyFee(e.target.value.replace(/[^0-9.]/g, ''))}
-                        className="w-full bg-transparent text-sm text-white font-bold outline-none"
-                      />
-                    </div>
-                  </div>
-                  <div className={`bg-[#0f1623] rounded-xl p-3 border border-[rgba(255,255,255,0.02)] transition-opacity ${includeFees ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                    <label className="block text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Fee Sell (%)</label>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={sellFee}
-                        onChange={(e) => setSellFee(e.target.value.replace(/[^0-9.]/g, ''))}
-                        className="w-full bg-transparent text-sm text-white font-bold outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
               <div className="bg-[#1e293b] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-xl p-8 relative overflow-hidden">
                 <div className="absolute top-8 right-8 text-brand-green/10 pointer-events-none">
                   <Target className="w-32 h-32" />
@@ -606,7 +619,7 @@ export default function AverageCalculator() {
                 </div>
 
                 <h3 className="text-[64px] font-black text-white tracking-tight leading-none drop-shadow-lg mb-6">
-                  {requiredBuyPrice > 0 ? requiredBuyPrice.toLocaleString('en-US', { maximumFractionDigits: 1 }) : '0'}
+                  {requiredBuyPrice > 0 ? requiredBuyPrice.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '0'}
                 </h3>
 
                 <div className="inline-block bg-[#1f1635] text-white text-xs font-semibold px-4 py-2 rounded-full border border-[rgba(157,114,231,0.3)] shadow-[0_0_15px_rgba(157,114,231,0.2)]">

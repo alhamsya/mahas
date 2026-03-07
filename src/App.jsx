@@ -15,6 +15,7 @@ import {
 
 import AverageCalculator from './components/AverageCalculator';
 import ProfitCalculator from './components/ProfitCalculator';
+import PyramidCalculator from './components/PyramidCalculator';
 import PositionSizingCalculator from './components/PositionSizingCalculator';
 import RiskRewardCalculator from './components/RiskRewardCalculator';
 import DividendCalculator from './components/DividendCalculator';
@@ -33,7 +34,6 @@ const NAV_GROUPS = [
     items: [
       { path: '/position-sizing', label: 'Position Sizing', sub: 'Calculate Lots', icon: Maximize },
       { path: '/risk-reward', label: 'Risk/Reward (R)', sub: 'R:R Ratio Analysis', icon: ShieldQuestion },
-      { path: '/margin', label: 'Margin & Fees', sub: 'Leverage Check', icon: CreditCard },
     ]
   },
   {
@@ -151,11 +151,16 @@ function Layout({ children }) {
 
           <div className="mb-8 flex items-center gap-4">
              <div className="w-14 h-14 rounded-2xl bg-[#0f1d2b] border border-[#1e293b] flex items-center justify-center">
-                 <Scale className="w-6 h-6 text-brand-green" />
+                 {(() => {
+                   const Icon = NAV_GROUPS.flatMap(g => g.items).find(i => i.label === activeTitle)?.icon || Scale;
+                   return <Icon className="w-6 h-6 text-brand-green" />;
+                 })()}
              </div>
              <div>
                 <h1 className="text-2xl font-bold text-white tracking-tight">{activeTitle}</h1>
-                <p className="text-text-muted text-sm mt-1">Up/Down Simulator</p>
+                <p className="text-text-muted text-sm mt-1">
+                  {NAV_GROUPS.flatMap(g => g.items).find(i => i.label === activeTitle)?.sub || 'Price Targets'}
+                </p>
              </div>
           </div>
 
@@ -173,6 +178,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<AverageCalculator />} />
           <Route path="/profit" element={<ProfitCalculator />} />
+          <Route path="/pyramid" element={<PyramidCalculator />} />
           <Route path="/position-sizing" element={<PositionSizingCalculator />} />
           <Route path="/risk-reward" element={<RiskRewardCalculator />} />
           <Route path="/dividend" element={<DividendCalculator />} />
