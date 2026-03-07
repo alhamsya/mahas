@@ -283,7 +283,7 @@ export default function AverageCalculator() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-20">
 
         {/* Left Column: Inputs */}
-        <div className="lg:col-span-7 bg-[#1e293b] rounded-[24px] border border-[#2d3748] shadow-2xl p-4 sm:p-6 lg:p-8">
+        <div className="lg:col-span-7 bg-[#1e293b] rounded-[24px] border border-[#2d3748] shadow-2xl p-[5px] sm:p-6 lg:p-8">
 
           {activeTab === 'blender' ? (
             // BLENDER VIEW
