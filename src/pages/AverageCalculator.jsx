@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
+import BrokerFeeCard from '../components/BrokerFeeCard';
 import { Scale, RotateCcw, HelpCircle, Plus, Info, Target, Banknote, Trash2, GraduationCap, BookOpen, X } from 'lucide-react';
 
 export default function AverageCalculator() {
@@ -266,13 +267,13 @@ export default function AverageCalculator() {
       <div className="mb-6 flex space-x-2 bg-bg-card border border-[rgba(255,255,255,0.05)] p-1.5 rounded-[16px]">
         <button
           onClick={() => setActiveTab('blender')}
-          className={`flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2.5 text-sm font-semibold transition-all ${activeTab === 'blender' ? 'bg-[#252336] text-[#b78bf2] shadow-sm' : 'text-text-muted hover:text-white hover:bg-[rgba(255,255,255,0.02)]'}`}
+          className={`flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2.5 text-sm font-semibold transition-all ${activeTab === 'blender' ? 'bg-[#252336] text-[#52FBA2] shadow-sm' : 'text-text-muted hover:text-white hover:bg-[rgba(255,255,255,0.02)]'}`}
         >
           <Scale className="w-4 h-4" /> Position Blender
         </button>
         <button
           onClick={() => setActiveTab('target')}
-          className={`flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2.5 text-sm font-semibold transition-all ${activeTab === 'target' ? 'bg-[#252336] text-[#b78bf2] shadow-sm' : 'text-text-muted hover:text-white hover:bg-[rgba(255,255,255,0.02)]'}`}
+          className={`flex-1 py-3.5 rounded-xl flex items-center justify-center gap-2.5 text-sm font-semibold transition-all ${activeTab === 'target' ? 'bg-[#252336] text-[#52FBA2] shadow-sm' : 'text-text-muted hover:text-white hover:bg-[rgba(255,255,255,0.02)]'}`}
         >
           <Target className="w-4 h-4" /> Target Price
         </button>
@@ -289,9 +290,9 @@ export default function AverageCalculator() {
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[rgba(157,114,231,0.1)] flex items-center justify-center">
-                    <Scale className="w-5 h-5 text-[#b78bf2]" />
+                    <Scale className="w-5 h-5 text-[#52FBA2]" />
                   </div>
-                  <h2 className="text-lg font-bold text-[#b78bf2]">Position Blender</h2>
+                  <h2 className="text-lg font-bold text-[#52FBA2]">Position Blender</h2>
                 </div>
                 <div className="flex items-center gap-4 text-xs font-medium text-text-muted">
                   <button onClick={() => setShowHelpModal(true)} className="flex items-center gap-1.5 hover:text-white transition-colors"><HelpCircle className="w-3.5 h-3.5" /> Bantuan</button>
@@ -425,9 +426,9 @@ export default function AverageCalculator() {
             <>
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-xl bg-[#231d3b] flex items-center justify-center border border-[rgba(255,255,255,0.03)]">
-                  <Target className="w-5 h-5 text-[#b78bf2]" />
+                  <Target className="w-5 h-5 text-[#52FBA2]" />
                 </div>
-                <h2 className="text-lg font-bold text-[#b78bf2]">Target Simulator</h2>
+                <h2 className="text-lg font-bold text-[#52FBA2]">Target Simulator</h2>
               </div>
 
               {/* Current Position Group */}
@@ -496,7 +497,7 @@ export default function AverageCalculator() {
                 </div>
 
                 <div className="bg-[rgba(157,114,231,0.05)] rounded-xl p-4 border border-[rgba(157,114,231,0.2)]">
-                  <label className="block text-[10px] font-bold text-[#b78bf2] uppercase tracking-wider mb-2">TARGET AVERAGE PRICE</label>
+                  <label className="block text-[10px] font-bold text-[#52FBA2] uppercase tracking-wider mb-2">TARGET AVERAGE PRICE</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -516,45 +517,14 @@ export default function AverageCalculator() {
         <div className="lg:col-span-5 space-y-4">
 
           {/* Shared Broker Fee Card */}
-          <div className="bg-[#1e293b] rounded-[15px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-2">
-                <Banknote className="w-4 h-4 text-[#b78bf2]" />
-                <h3 className="text-[13px] font-bold text-white leading-none">Broker Fee</h3>
-              </div>
-              <button
-                onClick={() => setIncludeFees(!includeFees)}
-                className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${includeFees ? 'bg-[#b78bf2]' : 'bg-[#334155]'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${includeFees ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className={`bg-[#0f1623] rounded-xl p-3 border border-[rgba(255,255,255,0.02)] transition-opacity ${includeFees ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                <label className="block text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Fee Buy (%)</label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={buyFee}
-                    onChange={(e) => setBuyFee(e.target.value.replace(/[^0-9.]/g, ''))}
-                    className="w-full bg-transparent text-sm text-white font-bold outline-none"
-                  />
-                </div>
-              </div>
-              <div className={`bg-[#0f1623] rounded-xl p-3 border border-[rgba(255,255,255,0.02)] transition-opacity ${includeFees ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                <label className="block text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1.5">Fee Sell (%)</label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={sellFee}
-                    onChange={(e) => setSellFee(e.target.value.replace(/[^0-9.]/g, ''))}
-                    className="w-full bg-transparent text-sm text-white font-bold outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <BrokerFeeCard
+            includeFees={includeFees}
+            setIncludeFees={setIncludeFees}
+            buyFee={buyFee}
+            setBuyFee={setBuyFee}
+            sellFee={sellFee}
+            setSellFee={setSellFee}
+          />
 
           {activeTab === 'blender' ? (
             // BLENDER OUTPUT
@@ -611,7 +581,7 @@ export default function AverageCalculator() {
             // TARGET SIMULATOR OUTPUT
             <div className="bg-[#2B2745] rounded-[15px] border border-[rgba(255,255,255,0.05)] shadow-2xl p-8 relative flex flex-col justify-center min-h-[460px]">
               <div className="text-center mb-10">
-                <div className="flex items-center justify-center gap-2 text-[#b78bf2] mb-3">
+                <div className="flex items-center justify-center gap-2 text-[#52FBA2] mb-3">
                   <Banknote className="w-4 h-4" />
                   <p className="text-[11px] font-bold uppercase tracking-widest">REQUIRED BUY PRICE</p>
                 </div>
@@ -667,16 +637,16 @@ export default function AverageCalculator() {
               {/* Seksi 1: Mode Kalkulator */}
               <div>
                 <div className="flex items-center gap-2.5 mb-3.5">
-                  <BookOpen className="w-5 h-5 text-[#b78bf2]" />
+                  <BookOpen className="w-5 h-5 text-[#52FBA2]" />
                   <h3 className="text-[15px] font-bold text-white">Mode Kalkulator</h3>
                 </div>
                 <div className="space-y-3">
                   <div className="bg-[#0f1623] p-4 rounded-[16px] border border-[#1e293b]">
-                    <h4 className="text-[14px] font-bold text-[#b78bf2] mb-1">Position Blender</h4>
+                    <h4 className="text-[14px] font-bold text-[#52FBA2] mb-1">Position Blender</h4>
                     <p className="text-[13px] text-gray-400 leading-relaxed">Hitung rata-rata harga (Average Price) dari beberapa posisi pembelian yang berbeda.</p>
                   </div>
                   <div className="bg-[#0f1623] p-4 rounded-[16px] border border-[#1e293b]">
-                    <h4 className="text-[14px] font-bold text-[#b78bf2] mb-1">Target Price Simulator</h4>
+                    <h4 className="text-[14px] font-bold text-[#52FBA2] mb-1">Target Price Simulator</h4>
                     <p className="text-[13px] text-gray-400 leading-relaxed">Cari tahu di harga berapa harus beli (Buy Price) untuk mencapai Target Average tertentu dengan budget yang ada.</p>
                   </div>
                 </div>
@@ -685,12 +655,12 @@ export default function AverageCalculator() {
               {/* Seksi 2: Apa itu Average Up/Down? */}
               <div>
                 <div className="flex items-center gap-2.5 mb-3.5">
-                  <Info className="w-5 h-5 text-[#b78bf2]" />
+                  <Info className="w-5 h-5 text-[#52FBA2]" />
                   <h3 className="text-[15px] font-bold text-white">Apa itu Average Up/Down?</h3>
                 </div>
                 <div className="bg-[#0f1623] p-4 rounded-[16px] border border-[#1e293b] space-y-3">
                   <p className="text-[13px] text-gray-400 leading-relaxed">
-                    <strong className="text-[#b78bf2] font-semibold">Average Down:</strong> Membeli lebih banyak saham ketika harga turun untuk menurunkan harga rata-rata pembelian Anda.
+                    <strong className="text-[#52FBA2] font-semibold">Average Down:</strong> Membeli lebih banyak saham ketika harga turun untuk menurunkan harga rata-rata pembelian Anda.
                   </p>
                   <p className="text-[13px] text-gray-400 leading-relaxed">
                     <strong className="text-[#52FBA2] font-semibold">Average Up:</strong> Menambah posisi ketika harga naik, biasanya untuk menambah exposure pada saham yang menunjukkan momentum positif.

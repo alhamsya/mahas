@@ -215,20 +215,20 @@ export default function DashboardLayout({ children }) {
       <main className="flex-1 overflow-y-auto w-full relative">
         <div className={`${currentPath === '/msci-screener' ? 'w-full' : 'max-w-6xl'} mx-auto p-6 md:p-10 transition-all duration-300`}>
           
-          {/* Top Breadcrumb Header matches reference exactly */}
-          <div className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-widest mb-8">
-            <span className="text-text-muted">{activeGroup}</span>
-            <span className="text-text-muted/50 text-lg leading-none mt-[-2px]">›</span>
-            <span className="text-brand-green tracking-widest">{activeTitle}</span>
+          {/* Top Breadcrumb Header */}
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] mb-8 w-full">
+            <span className="text-[#a0aec0] opacity-80">{activeGroup}</span>
+            <span className="text-[#a0aec0]/40 text-sm leading-none mt-[-1px] mx-1">›</span>
+            <span className="text-brand-green">{activeTitle}</span>
           </div>
 
-          <div className="mb-8 flex items-center gap-4">
-             <div className="w-14 h-14 rounded-2xl bg-[#0f1d2b] border border-[#1e293b] flex items-center justify-center">
-                 <ActiveIconComponent className="w-6 h-6 text-brand-green" />
+          <div className="mb-10 flex items-center gap-4 w-full">
+             <div className="w-[52px] h-[52px] rounded-2xl bg-[#131a26]/80 border border-[#2d3748] flex items-center justify-center shrink-0">
+                 <ActiveIconComponent className="w-[22px] h-[22px] text-brand-green" strokeWidth={2} />
              </div>
-             <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">{activeTitle}</h1>
-                <p className="text-text-muted text-sm mt-1">
+             <div className="flex flex-col justify-center translate-y-[-1px]">
+                <h1 className="text-[22px] font-bold text-white tracking-tight leading-tight">{activeTitle}</h1>
+                <p className="text-[13px] font-medium text-[#a0aec0] opacity-90 mt-0.5">
                   {SIDEBAR_STRUCTURE.flatMap(s => s.groups.flatMap(g => g.items)).find(i => i.label === activeTitle)?.sub || 'Price Targets'}
                 </p>
              </div>
