@@ -204,7 +204,7 @@ export default function AverageCalculator() {
 
   const updatePosition = (id, field, value) => {
     const rawValue = (field === 'price' || field === 'lot') ? parseFormattedVal(value) : value;
-    
+
     // Handle Target State Updates
     if (id === 'targetAvg') setTargetCurrentAvg(rawValue);
     else if (id === 'targetValue') setTargetTotalValue(rawValue);
@@ -234,12 +234,12 @@ export default function AverageCalculator() {
   const breakEvenPrice = averagePrice / (1 - sFeeNum);
 
   // Target Calculations
-  const targetCurrentLot = (Number(targetCurrentAvg) > 0 && Number(targetTotalValue) > 0) 
-    ? Math.round(Number(targetTotalValue) / (Number(targetCurrentAvg) * 100)) 
+  const targetCurrentLot = (Number(targetCurrentAvg) > 0 && Number(targetTotalValue) > 0)
+    ? Math.round(Number(targetTotalValue) / (Number(targetCurrentAvg) * 100))
     : 0;
-  
+
   const targetCurrentValue = Number(targetTotalValue);
-  
+
   const currentShares = targetCurrentLot * 100;
   const desiredAvg = Number(targetDesiredAvg);
   const budget = Number(targetBudget);
@@ -283,7 +283,7 @@ export default function AverageCalculator() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-20">
 
         {/* Left Column: Inputs */}
-        <div className="lg:col-span-7 bg-[#1e293b] rounded-[24px] border border-[#2d3748] shadow-2xl p-[5px] sm:p-6 lg:p-8">
+        <div className="lg:col-span-7 bg-[#1e293b] rounded-[15px] border border-[#2d3748] shadow-2xl p-[5px] sm:p-6 lg:p-8">
 
           {activeTab === 'blender' ? (
             // BLENDER VIEW
@@ -297,16 +297,6 @@ export default function AverageCalculator() {
                 </div>
                 <div className="flex items-center gap-4 text-xs font-medium text-text-muted">
                   <button onClick={() => setShowHelpModal(true)} className="flex items-center gap-1.5 hover:text-white transition-colors"><HelpCircle className="w-3.5 h-3.5" /> Bantuan</button>
-                  <button
-                    onClick={() => {
-                      setPositions([{ id: '1', price: '', lot: '', isActive: true }]);
-                      Cookies.remove('avgCalc_positions');
-                      setJustAddedId('1');
-                    }}
-                    className="flex items-center gap-1.5 hover:text-white transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" /> Reset
-                  </button>
                 </div>
               </div>
 
@@ -330,7 +320,17 @@ export default function AverageCalculator() {
                       <th className="p-2 text-center w-[20%]">LOTS</th>
                       <th className="p-2 text-center w-[45%]">VALUE</th>
                       <th className="p-2 text-center text-text-muted w-12 pb-2">
-                        <Trash2 className="w-4 h-4 mx-auto" />
+                        <button
+                          onClick={() => {
+                            setPositions([{ id: '1', price: '', lot: '', isActive: true }]);
+                            Cookies.remove('avgCalc_positions');
+                            setJustAddedId('1');
+                          }}
+                          className="p-1 cursor-pointer hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center mx-auto"
+                          title="Hapus semua posisi"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </th>
                     </tr>
                   </thead>
@@ -518,7 +518,7 @@ export default function AverageCalculator() {
         <div className="lg:col-span-5 space-y-4">
 
           {/* Shared Broker Fee Card */}
-          <div className="bg-[#1e293b] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
+          <div className="bg-[#1e293b] rounded-[15px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-2">
                 <Banknote className="w-4 h-4 text-[#b78bf2]" />
@@ -561,7 +561,7 @@ export default function AverageCalculator() {
           {activeTab === 'blender' ? (
             // BLENDER OUTPUT
             <>
-              <div className="bg-[#1e293b] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-xl p-8 relative overflow-hidden">
+              <div className="bg-[#1e293b] rounded-[15px] border border-[rgba(255,255,255,0.05)] shadow-xl p-8 relative overflow-hidden">
                 <div className="absolute top-8 right-8 text-brand-green/10 pointer-events-none">
                   <Target className="w-32 h-32" />
                 </div>
@@ -585,7 +585,7 @@ export default function AverageCalculator() {
                 </div>
               </div>
 
-              <div className="bg-[#1e293b] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
+              <div className="bg-[#1e293b] rounded-[15px] border border-[rgba(255,255,255,0.05)] shadow-xl p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-5 h-5 rounded-full bg-[rgba(255,200,0,0.1)] flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#fbbf24]"></div>
@@ -611,7 +611,7 @@ export default function AverageCalculator() {
             </>
           ) : (
             // TARGET SIMULATOR OUTPUT
-            <div className="bg-[#2B2745] rounded-[24px] border border-[rgba(255,255,255,0.05)] shadow-2xl p-8 relative flex flex-col justify-center min-h-[460px]">
+            <div className="bg-[#2B2745] rounded-[15px] border border-[rgba(255,255,255,0.05)] shadow-2xl p-8 relative flex flex-col justify-center min-h-[460px]">
               <div className="text-center mb-10">
                 <div className="flex items-center justify-center gap-2 text-[#b78bf2] mb-3">
                   <Banknote className="w-4 h-4" />
@@ -646,7 +646,7 @@ export default function AverageCalculator() {
       {/* Help Modal */}
       {showHelpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050B14]/80 backdrop-blur-sm">
-          <div className="w-full max-w-2xl bg-[#1e293b] rounded-[24px] overflow-hidden border border-[#334155] shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-2xl bg-[#1e293b] rounded-[15px] overflow-hidden border border-[#334155] shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="bg-[#2d224b] px-6 py-5 border-b border-[#3b3259] relative">
               <button
