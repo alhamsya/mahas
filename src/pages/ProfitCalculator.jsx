@@ -66,13 +66,6 @@ export default function ProfitCalculator() {
     return formattedWhole;
   };
 
-  const parseFormattedVal = (formattedStr) => {
-    if (!formattedStr) return 0;
-    // Remove commas for thousands
-    const rawNumStr = formattedStr.replace(/,/g, '');
-    return Number(rawNumStr) || 0;
-  };
-
   const handleNumericalChange = (setter, value, element) => {
     // 1. Capture current cursor and pure digits before it
     const cursor = element.selectionStart;

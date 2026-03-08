@@ -63,6 +63,7 @@ export default function AverageCalculator() {
         priceInputRefs.current[positions[0].id].focus();
       }
     }, 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -70,8 +71,8 @@ export default function AverageCalculator() {
     if (justAddedId && priceInputRefs.current[justAddedId]) {
       setTimeout(() => {
         priceInputRefs.current[justAddedId]?.focus();
+        setJustAddedId(null);
       }, 50);
-      setJustAddedId(null);
     }
   }, [positions, justAddedId]);
 
@@ -229,7 +230,6 @@ export default function AverageCalculator() {
   const totalValue = totalValueRaw * (1 + bFeeNum);
   const totalLot = totalShares / 100;
   const averagePrice = totalShares > 0 ? (totalValue / totalShares) : 0;
-  const rawAveragePrice = totalShares > 0 ? (totalValueRaw / totalShares) : 0;
 
   const breakEvenPrice = averagePrice / (1 - sFeeNum);
 
@@ -237,8 +237,6 @@ export default function AverageCalculator() {
   const targetCurrentLot = (Number(targetCurrentAvg) > 0 && Number(targetTotalValue) > 0)
     ? Math.round(Number(targetTotalValue) / (Number(targetCurrentAvg) * 100))
     : 0;
-
-  const targetCurrentValue = Number(targetTotalValue);
 
   const currentShares = targetCurrentLot * 100;
   const desiredAvg = Number(targetDesiredAvg);
@@ -526,7 +524,7 @@ export default function AverageCalculator() {
               </div>
               <button
                 onClick={() => setIncludeFees(!includeFees)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${includeFees ? 'bg-[#b78bf2]' : 'bg-[#334155]'}`}
+                className={`cursor-pointer relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${includeFees ? 'bg-[#b78bf2]' : 'bg-[#334155]'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${includeFees ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
