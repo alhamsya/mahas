@@ -32,7 +32,7 @@ export default function PyramidCalculator() {
    const handleNumericalChange = (setter, value, element) => {
       const cursor = element.selectionStart;
       const oldVal = element.value;
-      const digitsBefore = oldVal.substring(0, cursor).replace(/\D/g, '').length;
+      const digitsBefore = oldVal.substring(0, cursor).replace(/,/g, '').length;
 
       const rawVal = value.replace(/,/g, '');
       if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
@@ -42,10 +42,10 @@ export default function PyramidCalculator() {
       requestAnimationFrame(() => {
          const newVal = element.value;
          let newCursor = 0;
-         let digitsFound = 0;
+         let charsFound = 0;
          for (let i = 0; i < newVal.length; i++) {
-            if (digitsFound === digitsBefore) break;
-            if (/\d/.test(newVal[i])) digitsFound++;
+            if (charsFound === digitsBefore) break;
+            if (newVal[i] !== ',') charsFound++;
             newCursor = i + 1;
          }
          try {
@@ -64,7 +64,7 @@ export default function PyramidCalculator() {
 
       const cursor = element?.selectionStart || 0;
       const oldVal = element?.value || '';
-      const digitsBefore = oldVal.substring(0, cursor).replace(/\D/g, '').length;
+      const digitsBefore = oldVal.substring(0, cursor).replace(/,/g, '').length;
 
       const rawVal = value.replace(/,/g, '');
       if (rawVal === '' || /^\d*\.?\d*$/.test(rawVal)) {
@@ -75,10 +75,10 @@ export default function PyramidCalculator() {
          requestAnimationFrame(() => {
             const newVal = element.value;
             let newCursor = 0;
-            let digitsFound = 0;
+            let charsFound = 0;
             for (let i = 0; i < newVal.length; i++) {
-               if (digitsFound === digitsBefore) break;
-               if (/\d/.test(newVal[i])) digitsFound++;
+               if (charsFound === digitsBefore) break;
+               if (newVal[i] !== ',') charsFound++;
                newCursor = i + 1;
             }
             try {

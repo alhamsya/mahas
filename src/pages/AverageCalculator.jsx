@@ -1,7 +1,140 @@
 import { useState, useRef, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import BrokerFeeCard from '../components/BrokerFeeCard';
-import { Scale, RotateCcw, HelpCircle, Plus, Info, Target, Banknote, Trash2, GraduationCap, BookOpen, X } from 'lucide-react';
+import { 
+  Scale, RotateCcw, HelpCircle, Plus, Info, Target, Banknote, 
+  Trash2, GraduationCap, BookOpen, X, GripVertical 
+} from 'lucide-react';
+
+// DND Kit Imports
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+function SortablePositionRow({
+  pos,
+  index,
+  positions,
+  priceInputRefs,
+  lotInputRefs,
+  handleNumericalChange,
+  handleKeyDown,
+  updatePosition,
+  handleRemovePosition,
+  formatInputValue,
+  formatIDR
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: pos.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 0,
+    position: 'relative',
+  };
+
+  const priceVal = Number(pos.price) || 0;
+  const lotVal = Number(pos.lot) || 0;
+  const rowValue = priceVal * lotVal * 100;
+  const isActiveRow = pos.isActive !== false;
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`bg-[#0f1623] group hover:bg-[#131d2d] transition-colors ${isActiveRow ? '' : 'opacity-40 grayscale-[50%]'} ${isDragging ? 'shadow-2xl ring-1 ring-[#52FBA2]/20' : ''}`}
+    >
+      <td className="p-2 pl-3 text-center rounded-l-[12px] w-8">
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-1 text-text-muted hover:text-white cursor-grab active:cursor-grabbing transition-colors"
+          title="Drag untuk geser urutan"
+          tabIndex={-1}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      </td>
+      <td className="p-2 text-center w-12">
+        <input
+          type="checkbox"
+          checked={isActiveRow}
+          onChange={(e) => updatePosition(pos.id, 'isActive', e.target.checked)}
+          tabIndex={-1}
+          className="w-4 h-4 rounded cursor-pointer accent-[#52FBA2]"
+          title="Sertakan posisi ini dalam kalkulasi"
+        />
+      </td>
+      <td className="p-2 text-center font-mono text-text-muted border-r border-[#1e293b] w-8">
+        {index + 1}
+      </td>
+      <td className="p-0">
+        <input
+          ref={(el) => priceInputRefs.current[pos.id] = el}
+          type="text"
+          inputMode="decimal"
+          value={formatInputValue(pos.price)}
+          onChange={(e) => handleNumericalChange(pos.id, 'price', e.target.value, e.target)}
+          onKeyDown={(e) => handleKeyDown(e, pos.id, 'price', index)}
+          className="w-full bg-transparent text-center text-xs sm:text-sm text-white font-bold outline-none p-2 sm:p-3 lg:p-4 hover:bg-white/5 focus:bg-transparent"
+          placeholder="0"
+          disabled={!isActiveRow}
+        />
+      </td>
+      <td className="p-0 border-l border-[#1e293b]">
+        <input
+          ref={(el) => lotInputRefs.current[pos.id] = el}
+          type="text"
+          inputMode="decimal"
+          value={formatInputValue(pos.lot)}
+          onChange={(e) => handleNumericalChange(pos.id, 'lot', e.target.value, e.target)}
+          onKeyDown={(e) => handleKeyDown(e, pos.id, 'lot', index)}
+          className="w-full bg-transparent text-center text-xs sm:text-sm text-white font-bold outline-none p-2 sm:p-3 lg:p-4 hover:bg-white/5 focus:bg-transparent"
+          placeholder="0"
+          disabled={!isActiveRow}
+        />
+      </td>
+      <td className="p-2 sm:p-3 lg:p-4 text-center border-l border-[#1e293b]">
+        <span className={`font-bold tracking-wide ${rowValue > 0 ? 'text-white' : 'text-text-muted/30'}`}>
+          {`Rp ${formatIDR(rowValue)}`}
+        </span>
+      </td>
+      <td className="p-2 text-center align-middle rounded-r-[12px] border-l border-[#1e293b] w-12">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemovePosition(pos.id);
+          }}
+          tabIndex={-1}
+          className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors mx-auto flex items-center justify-center cursor-pointer"
+          title="Hapus posisi"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </td>
+    </tr>
+  );
+}
 
 export default function AverageCalculator() {
   const [activeTab, setActiveTab] = useState('blender'); // 'blender' | 'target'
@@ -92,6 +225,28 @@ export default function AverageCalculator() {
     setPositions(positions.map(p => ({ ...p, isActive: isActiveStatus })));
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setPositions((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
   const handleKeyDown = (e, posId, field, index) => {
     // Only allow numbers, dot, and control keys. 
     // Prevent typing letters, commas (we let the formatter handle commas), etc
@@ -135,6 +290,11 @@ export default function AverageCalculator() {
         if (field === 'price') priceInputRefs.current[prevPos.id]?.focus();
         else if (field === 'lot') lotInputRefs.current[prevPos.id]?.focus();
       }
+    } else if (e.key === 'Tab' && !e.shiftKey) {
+      if (field === 'lot' && index === positions.length - 1) {
+        e.preventDefault();
+        handleAddPosition();
+      }
     }
   };
 
@@ -142,20 +302,20 @@ export default function AverageCalculator() {
     // 1. Capture current cursor and pure digits before it
     const cursor = element.selectionStart;
     const oldVal = element.value;
-    const digitsBefore = oldVal.substring(0, cursor).replace(/\D/g, '').length;
+    const digitsBefore = oldVal.substring(0, cursor).replace(/,/g, '').length;
 
     // 2. Update state
     updatePosition(id, field, value);
 
-    // 3. In the next frame, restore cursor based on digits count
+    // 3. In the next frame, restore cursor based on digits + decimal separator count
     requestAnimationFrame(() => {
       const newVal = element.value;
       let newCursor = 0;
-      let digitsFound = 0;
+      let charsFound = 0;
 
       for (let i = 0; i < newVal.length; i++) {
-        if (digitsFound === digitsBefore) break;
-        if (/\d/.test(newVal[i])) digitsFound++;
+        if (charsFound === digitsBefore) break;
+        if (newVal[i] !== ',') charsFound++;
         newCursor = i + 1;
       }
 
@@ -300,118 +460,70 @@ export default function AverageCalculator() {
               </div>
 
               <div className="w-full overflow-x-auto text-[11px] sm:text-[13px] mb-6">
-                <table className="w-full border-separate border-spacing-y-1 lg:border-spacing-y-1.5 text-left min-w-[360px]">
-                  <thead>
-                    <tr className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                      <th className="p-2 pl-5 text-center w-16">
-                        <div className="flex flex-col items-center justify-center">
-                          <input
-                            type="checkbox"
-                            onChange={(e) => toggleAllPositions(e.target.checked)}
-                            checked={positions.length > 0 && positions.every(p => p.isActive !== false)}
-                            tabIndex={-1}
-                            className="w-3.5 h-3.5 rounded cursor-pointer accent-[#52FBA2]"
-                          />
-                        </div>
-                      </th>
-                      <th className="p-2 text-center w-8 font-mono">#</th>
-                      <th className="p-2 text-center w-[25%]">PRICE</th>
-                      <th className="p-2 text-center w-[20%]">LOTS</th>
-                      <th className="p-2 text-center w-[45%]">VALUE</th>
-                      <th className="p-2 text-center text-text-muted w-12 pb-2">
-                        <button
-                          onClick={() => {
-                            setPositions([{ id: '1', price: '', lot: '', isActive: true }]);
-                            Cookies.remove('avgCalc_positions');
-                            setJustAddedId('1');
-                          }}
-                          className="p-1 cursor-pointer hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center mx-auto"
-                          title="Hapus semua posisi"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {positions.map((pos, index) => {
-                      const priceVal = Number(pos.price) || 0;
-                      const lotVal = Number(pos.lot) || 0;
-                      const rowValue = priceVal * lotVal * 100;
-                      const isActiveRow = pos.isActive !== false;
-
-                      return (
-                        <tr key={pos.id} className={`bg-[#0f1623] group hover:bg-[#131d2d] transition-colors ${isActiveRow ? '' : 'opacity-40 grayscale-[50%]'}`}>
-                          <td className="p-2 pl-5 text-center rounded-l-[12px] relative z-10 w-16">
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <table className="w-full border-separate border-spacing-y-1 lg:border-spacing-y-1.5 text-left min-w-[360px]">
+                    <thead>
+                      <tr className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                        <th className="p-2 pl-5 text-center w-8"></th>
+                        <th className="p-2 text-center w-12">
+                          <div className="flex flex-col items-center justify-center">
                             <input
                               type="checkbox"
-                              checked={isActiveRow}
-                              onChange={(e) => updatePosition(pos.id, 'isActive', e.target.checked)}
+                              onChange={(e) => toggleAllPositions(e.target.checked)}
+                              checked={positions.length > 0 && positions.every(p => p.isActive !== false)}
                               tabIndex={-1}
-                              className="w-4 h-4 rounded cursor-pointer accent-[#52FBA2]"
-                              title="Sertakan posisi ini dalam kalkulasi"
+                              className="w-3.5 h-3.5 rounded cursor-pointer accent-[#52FBA2]"
                             />
-                          </td>
-                          <td className="p-2 text-center font-mono text-text-muted border-r border-[#1e293b]">
-                            {index + 1}
-                          </td>
-                          <td className="p-0">
-                            <input
-                              ref={(el) => priceInputRefs.current[pos.id] = el}
-                              type="text"
-                              inputMode="decimal"
-                              value={formatInputValue(pos.price)}
-                              onChange={(e) => handleNumericalChange(pos.id, 'price', e.target.value, e.target)}
-                              onKeyDown={(e) => handleKeyDown(e, pos.id, 'price', index)}
-                              className="w-full bg-transparent text-center text-xs sm:text-sm text-white font-bold outline-none p-2 sm:p-3 lg:p-4 hover:bg-white/5 focus:bg-transparent"
-                              placeholder="0"
-                              disabled={!isActiveRow}
-                            />
-                          </td>
-                          <td className="p-0 border-l border-[#1e293b]">
-                            <input
-                              ref={(el) => lotInputRefs.current[pos.id] = el}
-                              type="text"
-                              inputMode="decimal"
-                              value={formatInputValue(pos.lot)}
-                              onChange={(e) => handleNumericalChange(pos.id, 'lot', e.target.value, e.target)}
-                              onKeyDown={(e) => {
-                                handleKeyDown(e, pos.id, 'lot', index);
-                                if (e.key === 'Tab' && !e.shiftKey) {
-                                  if (index === positions.length - 1) {
-                                    e.preventDefault();
-                                    handleAddPosition();
-                                  }
-                                }
-                              }}
-                              className="w-full bg-transparent text-center text-xs sm:text-sm text-white font-bold outline-none p-2 sm:p-3 lg:p-4 hover:bg-white/5 focus:bg-transparent"
-                              placeholder="0"
-                              disabled={!isActiveRow}
-                            />
-                          </td>
-                          <td className="p-2 sm:p-3 lg:p-4 text-center border-l border-[#1e293b]">
-                            <span className={`font-bold tracking-wide ${rowValue > 0 ? 'text-white' : 'text-text-muted/30'}`}>
-                              {`Rp ${formatIDR(rowValue)}`}
-                            </span>
-                          </td>
-                          <td className="p-2 text-center align-middle rounded-r-[12px] border-l border-[#1e293b]">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemovePosition(pos.id);
-                              }}
-                              tabIndex={-1}
-                              className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors mx-auto flex items-center justify-center cursor-pointer"
-                              title="Hapus posisi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+                        </th>
+                        <th className="p-2 text-center w-8 font-mono">#</th>
+                        <th className="p-2 text-center w-[25%]">PRICE</th>
+                        <th className="p-2 text-center w-[20%]">LOTS</th>
+                        <th className="p-2 text-center w-[45%]">VALUE</th>
+                        <th className="p-2 text-center text-text-muted w-12 pb-2">
+                          <button
+                            onClick={() => {
+                              setPositions([{ id: '1', price: '', lot: '', isActive: true }]);
+                              Cookies.remove('avgCalc_positions');
+                              setJustAddedId('1');
+                            }}
+                            className="p-1 cursor-pointer hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center mx-auto"
+                            title="Hapus semua posisi"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </th>
+                      </tr>
+                    </thead>
+                    <SortableContext
+                      items={positions.map(p => p.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <tbody>
+                        {positions.map((pos, index) => (
+                          <SortablePositionRow
+                            key={pos.id}
+                            pos={pos}
+                            index={index}
+                            positions={positions}
+                            priceInputRefs={priceInputRefs}
+                            lotInputRefs={lotInputRefs}
+                            handleNumericalChange={handleNumericalChange}
+                            handleKeyDown={handleKeyDown}
+                            updatePosition={updatePosition}
+                            handleRemovePosition={handleRemovePosition}
+                            formatInputValue={formatInputValue}
+                            formatIDR={formatIDR}
+                          />
+                        ))}
+                      </tbody>
+                    </SortableContext>
+                  </table>
+                </DndContext>
               </div>
 
               <button
