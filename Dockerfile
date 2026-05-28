@@ -3,45 +3,38 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy source code
 COPY . .
 
-# Set API base URL to /api so requests go through Caddy's proxy
-# This ensures it works regardless of the domain
 ENV VITE_API_BASE_URL=/api
-
-# Build the application
 RUN npm run build
 
 # Runtime stage
-FROM caddy:alpine
+FROM caddy:2-alpine
 
-# Install Node.js and NPM (required for Mockoon)
-RUN apk add --no-cache nodejs npm
-
-# Install mockoon-cli globally
-RUN npm install -g @mockoon/cli
+# Node + tini + Mockoon CLI for serving the mock API.
+# tini gives us proper PID 1 signal handling on Railway.
+RUN apk add --no-cache nodejs npm tini wget \
+ && npm install -g @mockoon/cli@9.6.1 \
+ && npm cache clean --force
 
 WORKDIR /app
 
-# Copy build artifacts from builder stage
+# Mockoon writes runtime/log data under $HOME. Make sure it points to a
+# writable directory that exists in the image.
+ENV HOME=/app
+ENV XDG_CONFIG_HOME=/app/.config
+ENV XDG_DATA_HOME=/app/.local/share
+RUN mkdir -p /app/.config /app/.local/share /app/logs
+
 COPY --from=builder /app/dist ./dist
-
-# Copy Mockoon environment file
 COPY mockoon-mahas.json ./mockoon-mahas.json
-
-# Copy Caddy configuration
 COPY Caddyfile ./Caddyfile
-
-# Copy startup script
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
-# Use start.sh to run both Mockoon and Caddy
+EXPOSE 8080
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["./start.sh"]
